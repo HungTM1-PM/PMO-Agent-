@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>PMO Customer/People Management</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;
+  font-size:14px;color:#222;min-height:100vh;
+  background:#dfe8f2;
+  position:relative;
+}
+@keyframes fadeInUp{
+  from{opacity:0;transform:translateY(12px)}
+  to{opacity:1;transform:translateY(0)}
+}
+@keyframes fadeIn{
+  from{opacity:0}
+  to{opacity:1}
+}
+@keyframes spiritPulse{
+  0%,100%{transform:scale(1);opacity:.55}
+  50%{transform:scale(1.15);opacity:1}
+}
+@keyframes labelGlow{
+  0%,100%{opacity:.85}
+  50%{opacity:1}
+}
+
+/* ── Background: ngày → đêm + PM 3D hoạt hình ── */
+.bg-scene{
+  position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+}
+.bg-sky{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    #9fd4ff 0%,
+    #7ec0fa 14%,
+    #c8e8ff 28%,
+    #ffeccd 42%,
+    #ff9a7a 52%,
+    #8b6bb5 64%,
+    #2d4a78 78%,
+    #152238 90%,
+    #0a101c 100%);
+  background-size:100% 450%;
+  animation:skyScroll 100s linear infinite;
+}
+@keyframes skyScroll{
+  0%{background-position:0% 0%}
+  100%{background-position:0% 100%}
+}
+.bg-sky-soft{
+  position:absolute;inset:0;
+  background:radial-gradient(ellipse 120% 80% at 50% -10%,rgba(255,255,255,.45) 0%,transparent 55%);
+  mix-blend-mode:soft-light;
+}
+.bg-sun{
+  position:absolute;width:min(18vw,88px);height:min(18vw,88px);border-radius:50%;
+  left:8%;bottom:18%;
+  background:radial-gradient(circle at 32% 28%,#fffef0 0%,#ffe566 35%,#ffb300 100%);
+  box-shadow:0 0 50px rgba(255,200,80,.55),0 0 100px rgba(255,180,60,.25);
+  animation:celestialArc 100s linear infinite;
+}
+.bg-moon{
+  position:absolute;width:min(14vw,64px);height:min(14vw,64px);border-radius:50%;
+  right:12%;top:12%;
+  background:radial-gradient(circle at 35% 35%,#f5f7ff 0%,#c8d0e8 45%,#8a96b5 100%);
+  box-shadow:0 0 30px rgba(200,210,255,.35),inset -6px -4px 0 rgba(0,0,0,.08);
+  animation:moonArc 100s linear infinite;
+}
+.bg-stars{
+  position:absolute;inset:0;
+  background-image:
+    radial-gradient(1.5px 1.5px at 12% 18%,rgba(255,255,255,.85) 50%,transparent 52%),
+    radial-gradient(1px 1px at 22% 8%,rgba(255,255,255,.7) 50%,transparent 52%),
+    radial-gradient(1.2px 1.2px at 35% 22%,rgba(255,255,255,.65) 50%,transparent 52%),
+    radial-gradient(1px 1px at 55% 12%,rgba(255,255,255,.8) 50%,transparent 52%),
+    radial-gradient(1.5px 1.5px at 68% 28%,rgba(255,255,255,.55) 50%,transparent 52%),
+    radial-gradient(1px 1px at 78% 15%,rgba(255,255,255,.75) 50%,transparent 52%),
+    radial-gradient(1.2px 1.2px at 88% 25%,rgba(255,255,255,.6) 50%,transparent 52%),
+    radial-gradient(1px 1px at 42% 6%,rgba(255,255,255,.5) 50%,transparent 52%);
+  opacity:0;
+  animation:starsFade 100s linear infinite;
+}
+@keyframes starsFade{
+  0%,48%{opacity:0}
+  58%,88%{opacity:.95}
+  98%,100%{opacity:0}
+}
+@keyframes celestialArc{
+  0%{transform:translate(0,0) scale(1);opacity:1}
+  42%{transform:translate(28vw,-42vh) scale(1.08);opacity:1}
+  48%{opacity:0;transform:translate(32vw,-38vh) scale(.9)}
+  49%,100%{opacity:0}
+}
+@keyframes moonArc{
+  0%,50%{opacity:0;transform:translate(0,20px)}
+  55%{opacity:0}
+  58%{opacity:1;transform:translate(0,0)}
+  88%{opacity:1}
+  95%{opacity:0}
+  100%{opacity:0}
+}
+.bg-hill{
+  position:absolute;left:-10%;right:-10%;bottom:-5%;height:min(38vh,280px);
+  background:linear-gradient(180deg,rgba(34,60,92,.25) 0%,rgba(18,35,58,.55) 100%);
+  border-radius:50% 50% 0 0 / 100% 40% 0 0;
+  filter:blur(.5px);
+}
+.bg-hill::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,transparent 0%,rgba(10,20,40,.35) 100%);
+  border-radius:inherit;
+}
+/* Góc phải dưới — tránh chồng lên cột form (max 680px) giữa màn hình */
+.bg-illustration{
+  position:absolute;right:0;bottom:0;left:auto;transform:none;
+  width:min(44vw, 360px);height:auto;max-height:min(36vh, 300px);
+  z-index:1;opacity:.95;
+}
+@media (max-width: 640px){
+  .bg-illustration{
+    width:min(58vw, 260px);max-height:min(30vh, 240px);opacity:.88;
+  }
+}
+.bg-illustration svg{display:block;width:100%;height:auto;overflow:visible}
+/* Chu kỳ ~72s: khoẻ gõ phím → gục ngủ (thở + Zzz) → tỉnh lại */
+.pm-pose-awake{animation:poseCycleAwake 72s ease-in-out infinite}
+.pm-pose-asleep{animation:poseCycleSleep 72s ease-in-out infinite}
+.pm-pose-dozing{animation:poseCycleDozing 72s ease-in-out infinite}
+.pm-zzz-wrap{animation:zzzVisibility 72s ease-in-out infinite}
+.pm-zzz-wrap .zzz-z{animation:zzzFloat 2.4s ease-in-out infinite}
+.pm-zzz-wrap .zzz-z:nth-child(1){animation-delay:0s}
+.pm-zzz-wrap .zzz-z:nth-child(2){animation-delay:.25s}
+.pm-zzz-wrap .zzz-z:nth-child(3){animation-delay:.5s}
+.pm-pose-asleep .pm-breathe{animation:breatheSleep 3.2s ease-in-out infinite;transform-origin:170px 148px}
+.bg-illustration .pm-arm-type{transform-box:fill-box;transform-origin:118px 132px;animation:typeArm 0.85s ease-in-out infinite}
+@keyframes poseCycleAwake{
+  0%,37%{opacity:1}
+  42%,92%{opacity:0}
+  97%,100%{opacity:1}
+}
+@keyframes poseCycleDozing{
+  0%,38%{opacity:0}
+  40%,46%{opacity:1}
+  50%,100%{opacity:0}
+}
+@keyframes poseCycleSleep{
+  0%,44%{opacity:0}
+  48%,90%{opacity:1}
+  96%,100%{opacity:0}
+}
+@keyframes zzzVisibility{
+  0%,46%{opacity:0}
+  50%,88%{opacity:.92}
+  94%,100%{opacity:0}
+}
+@keyframes zzzFloat{
+  0%,100%{transform:translate(0,0)}
+  50%{transform:translate(5px,-10px)}
+}
+@keyframes breatheSleep{
+  0%,100%{transform:scaleY(1)}
+  50%{transform:scaleY(1.04)}
+}
+@keyframes typeArm{
+  0%,100%{transform:rotate(-5deg)}
+  50%{transform:rotate(-16deg)}
+}
+.pm-screen-glow{animation:screenGlow 100s linear infinite}
+@keyframes screenGlow{
+  0%,45%{opacity:.35}
+  55%,90%{opacity:.85}
+  100%{opacity:.35}
+}
+.pm-lamp-glow{animation:lampPulse 100s linear infinite}
+@keyframes lampPulse{
+  0%,45%{opacity:.2}
+  55%,90%{opacity:.75}
+  100%{opacity:.2}
+}
+
+/* ── Layout ── */
+.shell{
+  max-width:680px;margin:0 auto;padding:16px;
+  padding-bottom:max(32px, min(18vh, 140px));
+  position:relative;z-index:1;
+}
+@media (max-width: 720px){
+  .shell{padding-bottom:max(48px, min(26vh, 200px))}
+}
+.shell > *{animation:fadeInUp .52s cubic-bezier(.22,1,.36,1) backwards}
+.shell > *:nth-child(1){animation-delay:.02s}
+.shell > *:nth-child(2){animation-delay:.08s}
+.shell > *:nth-child(3){animation-delay:.14s}
+.shell > *:nth-child(4){animation-delay:.2s}
+.shell > *:nth-child(5){animation-delay:.26s}
+.shell > *:nth-child(6){animation-delay:.32s}
+
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  background:linear-gradient(120deg,#1B3A6B 0%,#234a82 45%,#1a5080 100%);
+  background-size:200% 200%;
+  animation:topbarSheen 12s ease-in-out infinite;
+  padding:12px 18px;border-radius:12px;margin-bottom:12px;
+  box-shadow:0 8px 24px rgba(27,58,107,.18);
+}
+@keyframes topbarSheen{
+  0%,100%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+}
+.topbar-brand{color:#fff;font-size:15px;font-weight:600;letter-spacing:.01em}
+.topbar-sub{color:#c8e0fb;font-size:12px;line-height:1.35;margin-top:3px;max-width:280px;animation:labelGlow 6s ease-in-out infinite}
+.topbar-link{
+  color:#e8f2ff;font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.35);
+  padding:6px 14px;border-radius:999px;transition:transform .2s ease,background .2s ease,box-shadow .2s ease
+}
+.topbar-link:hover{background:rgba(255,255,255,.12);color:#fff;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.topbar-link:active{transform:translateY(0) scale(.98)}
+
+/* Thanh tinh thần: con người — khách hàng — gần gũi (chỉ form PM) */
+.spirit-bar{
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+  padding:10px 14px;margin-bottom:12px;border-radius:10px;
+  background:linear-gradient(90deg,rgba(255,255,255,.72),rgba(239,246,255,.95));
+  border:1px solid rgba(46,117,182,.15);
+  box-shadow:0 2px 12px rgba(27,58,107,.06);
+}
+.spirit-dot{width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,#2E75B6,#5b9bd5);flex-shrink:0}
+.spirit-dot.s1{animation:spiritPulse 2.4s ease-in-out infinite}
+.spirit-dot.s2{animation:spiritPulse 2.4s ease-in-out .35s infinite}
+.spirit-dot.s3{animation:spiritPulse 2.4s ease-in-out .7s infinite}
+.spirit-label{font-size:12px;color:#4b5c73;font-weight:500;letter-spacing:.01em}
+
+.dash-tagline{font-size:12px;color:#64748b;margin:-4px 0 12px;padding:0 4px;line-height:1.45;animation:fadeIn .6s ease .15s backwards}
+
+/* ── Cards ── */
+.card{
+  background:#fff;border-radius:12px;border:1px solid rgba(229,231,235,.95);
+  padding:18px 20px;margin-bottom:12px;
+  box-shadow:0 2px 16px rgba(15,23,42,.04);
+  transition:box-shadow .28s ease,border-color .2s ease
+}
+.card:hover{box-shadow:0 8px 28px rgba(27,58,107,.09);border-color:rgba(147,197,253,.4)}
+.card-title{font-size:11px;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px}
+
+/* ── Steps ── */
+.steps{display:flex;gap:0;margin-bottom:14px;border-radius:10px;overflow:hidden;border:1px solid #e5e7eb;box-shadow:0 1px 8px rgba(15,23,42,.04)}
+.step-tab{
+  flex:1;text-align:center;padding:9px 6px;font-size:12px;color:#9ca3af;background:#fff;border-right:1px solid #e5e7eb;cursor:default;
+  transition:color .25s ease,background .25s ease,transform .2s ease
+}
+.step-tab:last-child{border-right:none}
+.step-tab.done{color:#059669;background:linear-gradient(180deg,#f0fdf4,#ecfdf5)}
+.step-tab.active{color:#1B3A6B;background:linear-gradient(180deg,#EFF6FF,#e0edff);font-weight:600;position:relative}
+.step-tab.active::after{
+  content:"";position:absolute;left:12%;right:12%;bottom:0;height:3px;border-radius:3px 3px 0 0;
+  background:linear-gradient(90deg,#2E75B6,#60a5fa);animation:fadeIn .4s ease
+}
+
+/* ── Form fields ── */
+.field{margin-bottom:14px}
+.field label{display:block;font-size:13px;color:#374151;margin-bottom:5px;font-weight:500}
+.field input,.field select,.field textarea{
+  width:100%;border:1px solid #d1d5db;border-radius:8px;padding:9px 12px;
+  font-size:13px;color:#111;background:#fff;outline:none;
+  transition:border-color .2s ease,box-shadow .2s ease,transform .15s ease;font-family:inherit
+}
+.field input:focus,.field select:focus,.field textarea:focus{
+  border-color:#2E75B6;box-shadow:0 0 0 3px rgba(219,234,254,.95)
+}
+.field textarea{min-height:60px;resize:vertical}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:480px){.field-row{grid-template-columns:1fr}}
+
+/* ── Radio options ── */
+.radio-group{display:flex;flex-direction:column;gap:6px}
+.radio-opt{display:flex;align-items:center;gap:10px;padding:8px 12px;border:1px solid #e5e7eb;border-radius:8px;cursor:pointer;transition:border-color .2s,background .2s,transform .18s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;user-select:none}
+.radio-opt:hover{border-color:#93c5fd;background:#f8fafc;transform:translateX(2px)}
+.radio-opt:active{transform:scale(.992)}
+.radio-opt.sel{border-color:#2E75B6;background:#EFF6FF;box-shadow:0 2px 10px rgba(46,117,182,.12)}
+.radio-dot{width:15px;height:15px;border-radius:50%;border:2px solid #d1d5db;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.radio-opt.sel .radio-dot{border-color:#2E75B6;background:#2E75B6}
+.radio-opt.sel .radio-dot::after{content:"";width:5px;height:5px;border-radius:50%;background:#fff}
+.radio-opt span{font-size:13px;color:#374151}
+.radio-opt.sel span{color:#1B3A6B;font-weight:500}
+
+/* ── Scale buttons ── */
+.scale-row{display:flex;gap:6px;flex-wrap:wrap}
+.scale-btn{width:38px;height:38px;border:1px solid #d1d5db;border-radius:8px;background:#fff;color:#6b7280;cursor:pointer;font-size:13px;font-weight:600;transition:transform .18s cubic-bezier(.34,1.56,.64,1),border-color .15s,background .15s,box-shadow .15s}
+.scale-btn:hover{border-color:#93c5fd;background:#f0f9ff;transform:translateY(-2px);box-shadow:0 3px 8px rgba(46,117,182,.12)}
+.scale-btn:active{transform:translateY(0) scale(.95)}
+.scale-btn.s-green{background:#dcfce7;color:#166534;border-color:#86efac}
+.scale-btn.s-amber{background:#fef9c3;color:#854d0e;border-color:#fde047}
+.scale-btn.s-red{background:#fee2e2;color:#991b1b;border-color:#fca5a5}
+
+/* ── Buttons ── */
+.btn-primary{
+  width:100%;padding:12px;border:none;border-radius:10px;
+  background:linear-gradient(135deg,#1B3A6B 0%,#234d8a 100%);
+  color:#fff;font-size:14px;font-weight:600;cursor:pointer;margin-top:4px;
+  box-shadow:0 4px 14px rgba(27,58,107,.28);
+  transition:transform .2s ease,box-shadow .2s ease,filter .2s ease
+}
+.btn-primary:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(27,58,107,.35);filter:brightness(1.04)}
+.btn-primary:active{transform:translateY(0);box-shadow:0 2px 10px rgba(27,58,107,.22)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;filter:none}
+.btn-next{
+  float:right;padding:9px 22px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;font-weight:500;cursor:pointer;margin-top:4px;
+  transition:transform .2s ease,background .2s ease,box-shadow .2s ease,border-color .2s ease
+}
+.btn-next:hover{background:#f8fafc;border-color:#93c5fd;transform:translateY(-1px);box-shadow:0 4px 12px rgba(15,23,42,.06)}
+.btn-next:active{transform:scale(.98)}
+.btn-outline{padding:8px 16px;border:1px solid #d1d5db;border-radius:999px;background:#fff;color:#374151;font-size:13px;cursor:pointer;transition:transform .18s ease,background .2s ease,box-shadow .2s ease}
+.btn-outline:hover{background:#f8fafc;transform:translateY(-1px);box-shadow:0 2px 8px rgba(15,23,42,.05)}
+.btn-outline:active{transform:scale(.98)}
+.clearfix::after{content:"";display:table;clear:both}
+
+/* ── Loading dots ── */
+.dots-wrap{text-align:center;padding:32px 16px}
+.dots{display:flex;justify-content:center;gap:6px;margin:14px 0}
+.dot{width:9px;height:9px;border-radius:50%;background:linear-gradient(135deg,#2E75B6,#7eb8eb);animation:pulse 1.2s ease-in-out infinite}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes pulse{0%,80%,100%{opacity:.28;transform:scale(.92)}40%{opacity:1;transform:scale(1)}}
+
+/* ── Report view ── */
+.report-toprow{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.report-pm{font-size:16px;font-weight:600}
+.chip-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:4px}
+.chip{font-size:12px;padding:2px 10px;border-radius:20px;background:#f3f4f6;color:#6b7280}
+.badge{display:inline-block;font-size:12px;font-weight:600;padding:3px 10px;border-radius:20px}
+.b-red{background:#fee2e2;color:#991b1b}
+.b-amber{background:#fef9c3;color:#854d0e}
+.b-green{background:#dcfce7;color:#166534}
+.b-blue{background:#dbeafe;color:#1e40af}
+.escalate-box{padding:10px 14px;border-radius:8px;margin-bottom:12px;font-weight:600;font-size:13px}
+.esc-critical{background:#fee2e2;border-left:4px solid #ef4444;color:#991b1b}
+.esc-high{background:#fef9c3;border-left:4px solid #eab308;color:#854d0e}
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:480px){.health-grid{grid-template-columns:1fr}}
+.health-box{border:1px solid #e5e7eb;border-radius:8px;padding:12px}
+.h-label{font-size:11px;color:#9ca3af;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px}
+.h-reasoning{font-size:12px;color:#6b7280;margin-top:7px;line-height:1.5}
+.section-lbl{font-size:11px;font-weight:600;color:#1B3A6B;text-transform:uppercase;letter-spacing:.05em;margin:14px 0 7px}
+.summary-box{background:#f8fafc;border-radius:8px;padding:11px 13px;font-size:13px;color:#374151;line-height:1.6;margin-bottom:4px}
+.action-list{display:flex;flex-direction:column;gap:5px}
+.action-item{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:1px solid #e5e7eb;border-radius:7px;font-size:13px;color:#374151}
+.action-num{width:20px;height:20px;border-radius:50%;background:#dbeafe;color:#1e40af;font-size:11px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.top-action{background:#EFF6FF;border-radius:8px;padding:11px 13px;margin-top:12px}
+.ta-label{font-size:11px;color:#2E75B6;text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px}
+.ta-val{font-size:14px;font-weight:600;color:#1B3A6B}
+
+/* ── Director dashboard ── */
+.stat-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+@media(max-width:500px){.stat-strip{grid-template-columns:repeat(2,1fr)}}
+.stat-box{background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:11px 13px;transition:transform .22s ease,box-shadow .22s ease}
+.stat-box:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(15,23,42,.07)}
+.stat-lbl{font-size:11px;color:#9ca3af;margin-bottom:2px}
+.stat-val{font-size:24px;font-weight:700;color:#111}
+.stat-val.danger{color:#dc2626}
+.week-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+.week-row label{font-size:13px;color:#6b7280}
+.week-row input{border:1px solid #d1d5db;border-radius:7px;padding:6px 10px;font-size:13px;width:80px}
+.pm-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:border-color .2s,transform .22s ease,box-shadow .22s ease}
+.pm-card:hover{border-color:#93c5fd;transform:translateY(-2px);box-shadow:0 8px 20px rgba(27,58,107,.09)}
+.pm-list .pm-card{animation:fadeInUp .42s cubic-bezier(.22,1,.36,1) backwards}
+.pm-list .pm-card:nth-child(1){animation-delay:.04s}
+.pm-list .pm-card:nth-child(2){animation-delay:.1s}
+.pm-list .pm-card:nth-child(3){animation-delay:.16s}
+.pm-list .pm-card:nth-child(4){animation-delay:.22s}
+.pm-list .pm-card:nth-child(5){animation-delay:.28s}
+.pm-list .pm-card:nth-child(6){animation-delay:.34s}
+.pm-list .pm-card:nth-child(7){animation-delay:.4s}
+.pm-list .pm-card:nth-child(8){animation-delay:.46s}
+.pm-list .pm-card:nth-child(n+9){animation-delay:.52s}
+.pm-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px}
+.pm-name{font-size:14px;font-weight:600;color:#111}
+.pm-meta{font-size:12px;color:#9ca3af;margin-top:2px}
+.pm-summary{font-size:12px;color:#6b7280;margin-top:7px;line-height:1.5}
+.pm-top-action{font-size:12px;color:#1e40af;margin-top:5px;font-weight:500}
+.escalate-pill{display:flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600;background:#fee2e2;color:#991b1b}
+.action-bar{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+.empty-state{text-align:center;padding:40px 16px;color:#9ca3af;font-size:13px}
+.card-sub{font-size:12px;color:#6b7280;margin:-6px 0 14px;line-height:1.45}
+.form-section{margin-top:16px;padding-top:14px;border-top:1px solid #eef0f4}
+.form-section-title{font-size:11px;font-weight:600;color:#1B3A6B;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+.field-row-dates{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:520px){.field-row-dates{grid-template-columns:1fr}}
+.field input[type="date"]{font-family:inherit}
+.watchlist-box{background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:12px 14px;margin-top:12px;font-size:13px;color:#78350f;line-height:1.55}
+.watchlist-box .wl-title{font-size:11px;font-weight:600;color:#92400e;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px}
+
+/* ── Detail panel ── */
+.back-btn{display:flex;align-items:center;gap:6px;font-size:13px;color:#2E75B6;cursor:pointer;margin-bottom:12px;background:none;border:none;padding:0;transition:transform .15s ease,color .15s ease}
+.back-btn:hover{text-decoration:underline;transform:translateX(-3px)}
+
+/* Giảm chuyển động — accessibility */
+@media (prefers-reduced-motion:reduce){
+  body{background:#e8edf3}
+  .bg-scene .bg-sky{background-position:0% 32%!important;animation:none!important}
+  .bg-scene .bg-sun{opacity:1!important;transform:translate(18vw,-28vh) scale(1)!important;animation:none!important}
+  .bg-scene .bg-moon{opacity:0!important;animation:none!important}
+  .bg-scene .bg-stars{opacity:0!important;animation:none!important}
+  .pm-pose-awake,.pm-pose-asleep,.pm-pose-dozing,.pm-zzz-wrap,.pm-zzz-wrap .zzz-z,
+  .bg-illustration .pm-screen-glow,.bg-illustration .pm-lamp-glow,.bg-illustration .pm-arm-type,
+  .bg-illustration .pm-breathe{animation:none!important}
+  .pm-pose-awake{opacity:1!important}
+  .pm-pose-asleep,.pm-pose-dozing,.pm-zzz-wrap{opacity:0!important}
+  .bg-illustration .pm-screen-glow{opacity:.5!important}
+  .bg-illustration .pm-lamp-glow{opacity:.25!important}
+  .topbar{animation:none}
+  .topbar-sub{animation:none}
+  .spirit-dot{animation:none!important}
+  .shell > *,.pm-list .pm-card{animation:none!important;opacity:1;transform:none}
+  .btn-primary:hover,.btn-next:hover,.btn-outline:hover,.pm-card:hover,.stat-box:hover,.radio-opt:hover,.scale-btn:hover{transform:none}
+  .dot{animation:none!important;opacity:.85}
+}
+</style>
+</head>
+<body>
+<div class="bg-scene" aria-hidden="true">
+  <div class="bg-sky"></div>
+  <div class="bg-sky-soft"></div>
+  <div class="bg-sun"></div>
+  <div class="bg-moon"></div>
+  <div class="bg-stars"></div>
+  <div class="bg-hill"></div>
+  <div class="bg-illustration">
+    <svg viewBox="0 0 340 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="">
+      <title>PM làm việc — từ lúc khoẻ đến lúc gục ngủ</title>
+      <defs>
+        <linearGradient id="pmvScr" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#7dd3fc"/><stop offset="100%" stop-color="#2563eb"/>
+        </linearGradient>
+        <filter id="pmvSh" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow dx="0" dy="1.5" stdDeviation="1.8" flood-opacity=".2"/>
+        </filter>
+        <filter id="pmvGlow" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.2" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+      </defs>
+      <ellipse cx="170" cy="208" rx="118" ry="10" fill="rgba(0,0,0,.12)"/>
+      <!-- Ghế văn phòng đỏ -->
+      <g filter="url(#pmvSh)">
+        <circle cx="62" cy="206" r="4" fill="#475569"/><circle cx="78" cy="206" r="4" fill="#475569"/><circle cx="92" cy="206" r="4" fill="#475569"/>
+        <line x1="78" y1="206" x2="78" y2="178" stroke="#64748b" stroke-width="4"/>
+        <path d="M48 158 Q48 150 58 150 L98 150 Q108 150 108 158 L108 168 L48 168 Z" fill="#9b2d4a"/>
+        <path d="M38 98 Q40 88 52 88 L104 88 Q116 88 118 98 L122 158 L34 158 Z" fill="#7d2440"/>
+        <rect x="44" y="152" width="68" height="10" rx="3" fill="#a83652"/>
+      </g>
+      <!-- Bàn gỗ + chân kim loại -->
+      <line x1="28" y1="174" x2="28" y2="210" stroke="#94a3b8" stroke-width="3"/>
+      <line x1="100" y1="174" x2="100" y2="210" stroke="#94a3b8" stroke-width="3"/>
+      <line x1="240" y1="174" x2="240" y2="210" stroke="#94a3b8" stroke-width="3"/>
+      <line x1="312" y1="174" x2="312" y2="210" stroke="#94a3b8" stroke-width="3"/>
+      <path d="M8 168 L332 168 L338 178 L2 178 Z" fill="#d4a574" filter="url(#pmvSh)"/>
+      <!-- Laptop -->
+      <rect x="128" y="168" width="104" height="6" rx="1" fill="#64748b"/>
+      <path d="M134 168 L226 168 L220 124 L140 124 Z" fill="#475569"/>
+      <rect class="pm-screen-glow" x="148" y="128" width="64" height="36" rx="2" fill="url(#pmvScr)" filter="url(#pmvGlow)"/>
+      <rect x="146" y="126" width="68" height="40" rx="3" fill="none" stroke="#334155" stroke-width="1.2"/>
+      <!-- Cốc cà phê -->
+      <rect x="248" y="148" width="28" height="32" rx="3" fill="#fff" filter="url(#pmvSh)"/>
+      <path d="M276 156 Q286 156 286 168 Q286 176 276 176" fill="none" stroke="#c92a3a" stroke-width="3"/>
+      <path d="M252 150 Q256 148 260 152" stroke="#92400e" stroke-width="2" fill="none"/>
+      <!-- Cây dưới bàn -->
+      <ellipse cx="288" cy="198" rx="18" ry="6" fill="rgba(0,0,0,.08)"/>
+      <path d="M278 198 L278 188 L298 188 L298 198 Z" fill="#a16207"/>
+      <path d="M288 188 L278 168 L282 168 L288 178 L294 168 L298 168 Z" fill="#16a34a"/>
+      <line x1="268" y1="88" x2="268" y2="168" stroke="#64748b" stroke-width="3" stroke-linecap="round"/>
+      <ellipse class="pm-lamp-glow" cx="268" cy="128" rx="18" ry="26" fill="#fef9c3" opacity=".75" filter="url(#pmvSh)"/>
+
+      <!-- Tư thế khoẻ: ngồi thẳng, gõ phím -->
+      <g class="pm-pose-awake">
+        <path d="M128 108 L212 108 Q220 114 220 128 L218 158 L122 158 L120 128 Q120 114 128 108 Z" fill="#fff" stroke="#e5e7eb" stroke-width="1" filter="url(#pmvSh)"/>
+        <path d="M166 112 L174 112 L172 152 L168 152 Z" fill="#c92a3a"/>
+        <path d="M138 168 L136 198 L150 198 L148 168 Z" fill="#2d2d36"/>
+        <path d="M192 168 L194 198 L180 198 L182 168 Z" fill="#2d2d36"/>
+        <ellipse cx="142" cy="198" rx="8" ry="4" fill="#1e1e1e"/>
+        <ellipse cx="188" cy="198" rx="8" ry="4" fill="#1e1e1e"/>
+        <ellipse cx="170" cy="78" rx="30" ry="32" fill="#f5d0b8"/>
+        <path d="M142 52 Q148 28 170 24 Q192 28 198 52 Q190 40 170 36 Q150 40 142 52" fill="#141414"/>
+        <ellipse cx="158" cy="76" rx="4" ry="5" fill="#fff"/><ellipse cx="182" cy="76" rx="4" ry="5" fill="#fff"/>
+        <circle cx="159" cy="77" r="2.2" fill="#1a1a1a"/><circle cx="183" cy="77" r="2.2" fill="#1a1a1a"/>
+        <path d="M152 56 Q158 54 164 56" stroke="#141414" stroke-width="1.2" fill="none"/>
+        <path d="M176 56 Q182 54 188 56" stroke="#141414" stroke-width="1.2" fill="none"/>
+        <path d="M162 92 Q170 96 178 92" stroke="#d4a574" stroke-width="1.2" fill="none"/>
+        <path d="M128 118 L108 138 L112 162 L125 160 L132 125 Z" fill="#fff"/>
+        <ellipse cx="108" cy="158" rx="10" ry="8" fill="#f5d0b8"/>
+        <g class="pm-arm-type">
+          <path d="M212 118 L232 138 L228 162 L215 160 L208 125 Z" fill="#fff"/>
+          <ellipse cx="228" cy="158" rx="10" ry="8" fill="#f5d0b8"/>
+        </g>
+      </g>
+
+      <!-- Lúc buồn ngủ (nháy gật nhẹ) -->
+      <g class="pm-pose-dozing">
+        <path d="M128 112 L212 112 Q218 118 218 130 L216 158 L124 158 L122 130 Q122 118 128 112 Z" fill="#fff" stroke="#e5e7eb" stroke-width="1" filter="url(#pmvSh)"/>
+        <path d="M166 116 L174 116 L172 150 L168 150 Z" fill="#c92a3a"/>
+        <ellipse cx="170" cy="88" rx="30" ry="30" fill="#f5d0b8"/>
+        <path d="M144 62 Q150 38 170 34 Q190 38 196 62 Q188 48 170 44 Q152 48 144 62" fill="#141414"/>
+        <path d="M154 84 L186 84" stroke="#141414" stroke-width="2" stroke-linecap="round"/>
+        <path d="M158 100 Q170 104 182 100" stroke="#c97b72" stroke-width="1.2" fill="none"/>
+      </g>
+
+      <!-- Gục ngủ trên laptop -->
+      <g class="pm-pose-asleep">
+        <g class="pm-breathe">
+          <path d="M118 118 L218 118 Q228 128 226 145 L220 158 L116 158 L112 145 Q110 128 118 118 Z" fill="#fff" stroke="#e5e7eb" stroke-width="1" filter="url(#pmvSh)"/>
+          <path d="M162 122 L172 122 L170 148 L166 148 Z" fill="#c92a3a"/>
+          <ellipse cx="170" cy="148" rx="32" ry="26" fill="#f5d0b8" transform="rotate(-8 170 148)"/>
+          <path d="M148 128 Q152 108 170 102 Q188 108 192 128 Q184 118 170 114 Q156 118 148 128" fill="#141414"/>
+          <path d="M152 142 L188 142" stroke="#141414" stroke-width="2" stroke-linecap="round"/>
+          <path d="M158 152 Q170 158 182 152" stroke="#b4535c" stroke-width="1.2" fill="none"/>
+          <ellipse cx="176" cy="154" rx="4" ry="3" fill="#fff" opacity=".85"/>
+          <path d="M210 130 L228 175 L218 178 L200 135 Z" fill="#fff"/>
+          <path d="M118 125 L95 155 L100 168 L112 162 L120 132 Z" fill="#fff"/>
+          <ellipse cx="100" cy="160" rx="9" ry="7" fill="#f5d0b8"/>
+        </g>
+        <path d="M128 168 L126 198 L140 198 L138 168 Z" fill="#2d2d36"/>
+        <path d="M202 168 L204 198 L190 198 L192 168 Z" fill="#2d2d36"/>
+        <ellipse cx="134" cy="198" rx="8" ry="4" fill="#1e1e1e"/>
+        <ellipse cx="196" cy="198" rx="8" ry="4" fill="#1e1e1e"/>
+      </g>
+
+      <!-- Zzz -->
+      <g class="pm-zzz-wrap" fill="#64748b" font-family="system-ui,sans-serif" font-weight="700" font-size="14">
+        <text class="zzz-z" x="218" y="42">Z</text>
+        <text class="zzz-z" x="232" y="28" font-size="18">Z</text>
+        <text class="zzz-z" x="250" y="14" font-size="22">Z</text>
+      </g>
+    </svg>
+  </div>
+</div>
+<div class="shell" id="app"></div>
+
+<script src="/js/app.js" defer></script>
+</body>
+</html>
